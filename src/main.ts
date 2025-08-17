@@ -15,7 +15,11 @@ const shoppingListRef = ref(database, "shoppingList");
 // ---------------- DOM Elements ----------------
 const inputFieldEl = document.getElementById("input-field") as HTMLInputElement;
 const addButtonEl = document.getElementById("add-button") as HTMLButtonElement;
+const refreshButtonEl = document.getElementById(
+  "refresh-button"
+) as HTMLButtonElement;
 const shoppingListEl = document.getElementById("shopping-list") as HTMLElement;
+const clearedList = new Set<string>();
 
 // ---------------- Add Item ----------------
 addButtonEl?.addEventListener("click", () => {
@@ -25,6 +29,9 @@ addButtonEl?.addEventListener("click", () => {
     inputFieldEl.value = "";
   }
 });
+
+// ---------------- Refresh ----------------
+refreshButtonEl?.addEventListener("click", clearDB);
 
 // ---------------- Listen to Database ----------------
 onValue(shoppingListRef, (snapshot) => {
@@ -43,17 +50,39 @@ function clearShoppingListEl() {
   shoppingListEl.innerHTML = "";
 }
 
+function clearDB() {
+  if (clearedList.size === 0) {
+    return;
+  }
+  const itemsToClear = clearedList;
+  itemsToClear.forEach((itemID) =>
+    remove(ref(database, `shoppingList/${itemID}`))
+  );
+  clearedList.clear();
+}
+
 function appendItemToShoppingListEl([itemID, itemValue]: [string, string]) {
   const newEl = document.createElement("li");
   newEl.textContent = itemValue;
-
+  if (clearedList.has(itemID)) {
+    newEl.style.textDecoration = "line-through";
+  }
   // Remove item on click
   newEl.addEventListener("click", () => {
-    const exactLocationOfItemInDB = ref(database, `shoppingList/${itemID}`);
-    remove(exactLocationOfItemInDB);
+    strikeItem(itemID, newEl);
   });
 
   shoppingListEl.append(newEl);
+}
+
+function strikeItem(itemID: string, listItem: HTMLLIElement) {
+  if (clearedList.has(itemID)) {
+    listItem.style.textDecoration = "none";
+    clearedList.delete(itemID);
+    return;
+  }
+  clearedList.add(itemID);
+  listItem.style.textDecoration = "line-through";
 }
 
 if ("serviceWorker" in navigator) {
