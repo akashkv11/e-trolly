@@ -54,6 +54,9 @@ ul {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  max-height: calc(65vh - 130px);
+  overflow-y: scroll;
+  align-content: flex-start;
 }
 
 ul li {
